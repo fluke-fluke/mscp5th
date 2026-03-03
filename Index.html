@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #000;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+    }
+    .card {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 2rem;
+      width: 320px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    input {
+      width: 100%;
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 0.7rem 0.9rem;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input::placeholder { color: #555; }
+    input:focus { border-color: #666; }
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: #fff;
+      color: #000;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 0.25rem;
+      transition: background 0.15s;
+    }
+    button:hover { background: #ddd; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .error {
+      color: #f66;
+      font-size: 0.78rem;
+      text-align: center;
+      min-height: 1rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <div style="display:flex;flex-direction:column;gap:0.75rem">
+    <input type="text"     id="username" placeholder="Username" autocomplete="username"/>
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password"/>
+    <div class="error" id="error-msg"></div>
+    <button id="btn" onclick="doLogin()">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<script>
+  // ================================================================
+  const SHEET_ID   = '1-d4CY1jz5wGI5Yd8GVfNWbL_qQKkHGGaOCDJE5hi5KE';
+  const API_KEY    = 'AIzaSyB0MqVzwBclzr_gi44u3aWJvglANLDOgEo';
+  const SHEET_NAME = 'mscp5th';
+  // ================================================================
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const btn = document.getElementById('btn');
+    const err = document.getElementById('error-msg');
+
+    err.textContent = '';
+    if (!username || !password) { err.textContent = 'กรุณากรอกข้อมูลให้ครบ'; return; }
+
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    try {
+      const range = encodeURIComponent(SHEET_NAME + '!A:C');
+      const url = 'https://sheets.googleapis.com/v4/spreadsheets/'
+                + SHEET_ID + '/values/' + range + '?key=' + API_KEY;
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      const data = await resp.json();
+      const rows = data.values || [];
+
+      let found = false;
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === username && rows[i][1] === password) {
+          found = true;
+          const link = rows[i][2];
+          if (link) {
+            window.location.href = link; // redirect แท็บเดิม
+          } else {
+            err.textContent = 'ไม่พบลิงค์สำหรับ user นี้';
+            btn.disabled = false;
+            btn.textContent = 'เข้าสู่ระบบ';
+          }
+          break;
+        }
+      }
+
+      if (!found) {
+        err.textContent = 'Username หรือ Password ไม่ถูกต้อง';
+        btn.disabled = false;
+        btn.textContent = 'เข้าสู่ระบบ';
+      }
+
+    } catch (e) {
+      err.textContent = 'เชื่อมต่อไม่ได้: ' + e.message;
+      btn.disabled = false;
+      btn.textContent = 'เข้าสู่ระบบ';
+    }
+  }
+</script>
+
+</body>
+</html>
